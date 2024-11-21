@@ -26,22 +26,33 @@
         }
         .record-container {
             margin-top: 20px;
-            width: 80%;
-            max-width: 600px;
+            width: 95%;
+            max-width: 1200px;
+            display: flex;
+            gap: 10px;
+        }
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
         }
         .class-record {
             background-color: white;
-            padding: 15px;
-            margin: 10px 0;
+            padding: 8px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+            font-size: 1.2em;
+            word-break: break-word;
         }
         .class-record:hover {
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         .absent-record {
             color: #ff0000;
+            font-size: 1.4em;
             font-weight: bold;
         }
         .timestamp {
@@ -54,8 +65,21 @@
             font-style: italic;
         }
         .present-record {
-            color: #0066cc;  /* 藍色 */
+            color: #0066cc;
+            font-size: 1.4em;
             font-weight: bold;
+        }
+        @media (max-width: 768px) {
+            .record-container {
+                gap: 5px;
+            }
+            .class-record {
+                padding: 6px;
+                font-size: 0.85em;
+            }
+            .timestamp {
+                font-size: 0.8em;
+            }
         }
     </style>
 </head>
@@ -107,27 +131,46 @@
             return text !== 'yes' && text !== 'no' && text !== '到齊';
         }
 
-        // 定義所有班級
-        const allClasses = [];
-        for (let grade = 1; grade <= 6; grade++) {
-            for (let section of ['A', 'B', 'C', 'D']) {
-                allClasses.push(`F${grade}${section}`);  // 修改為與 pri_class.html 相同的格式
+        // 修改定義所有班級的方式
+        function generateClassList() {
+            const firstColumn = [];  // F1-F3
+            const secondColumn = []; // F4-F6
+            
+            for (let grade = 1; grade <= 6; grade++) {
+                for (let section of ['A', 'B', 'C', 'D']) {
+                    const className = `F${grade}${section}`;
+                    if (grade <= 3) {
+                        firstColumn.push(className);
+                    } else {
+                        secondColumn.push(className);
+                    }
+                }
             }
+            
+            return { firstColumn, secondColumn };
         }
 
-        // 初始化顯示所有班級
+        // 修改初始化顯示函數
         function initializeClassRecords() {
-            recordContainer.innerHTML = ''; // 清空容器
-            allClasses.sort().forEach(className => {
-                const recordDiv = document.createElement('div');
-                recordDiv.className = 'class-record';
-                recordDiv.id = `record-${className}`;
-                recordDiv.innerHTML = `
-                    <div>${className}: </div>
-                    <div class="timestamp">尚未簽到</div>
-                `;
-                recordContainer.appendChild(recordDiv);
-            });
+            const { firstColumn, secondColumn } = generateClassList();
+            recordContainer.innerHTML = `
+                <div class="column">
+                    ${firstColumn.map(className => `
+                        <div class="class-record" id="record-${className}">
+                            <div>${className}: </div>
+                            <div class="timestamp">尚未簽到</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="column">
+                    ${secondColumn.map(className => `
+                        <div class="class-record" id="record-${className}">
+                            <div>${className}: </div>
+                            <div class="timestamp">尚未簽到</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
         // 首次執行初始化
@@ -146,10 +189,9 @@
                         // 格式化時間
                         const timestamp = new Date(classData.timestamp);
                         const formattedTime = timestamp.toLocaleString('zh-TW', {
-                            year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
-                            hour: '2-digit',
+                            hour: '2-digit', hour12: false,
                             minute: '2-digit'
                         });
 
@@ -161,7 +203,7 @@
                         // 更新記錄內容
                         recordDiv.innerHTML = `
                             <div class="${isAbsent ? 'absent-record' : ''} ${isPresent ? 'present-record' : ''}">${classId}: ${absentText}</div>
-                            <div class="timestamp">更新時間: ${formattedTime}</div>
+                            <div class="timestamp">更新: ${formattedTime}</div>
                         `;
                     }
                 });
